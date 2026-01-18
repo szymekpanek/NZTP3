@@ -19,7 +19,6 @@ public class CartCleanupScheduler {
 
     private final CartRepository cartRepository;
 
-    // Uruchamia się co minutę
     @Scheduled(fixedRate = 60000)
     public void cleanupExpiredCarts() {
 //        LocalDateTime expirationTime = LocalDateTime.now().minusMinutes(15);
@@ -28,7 +27,6 @@ public class CartCleanupScheduler {
 
         if (!expiredCarts.isEmpty()) {
             log.info("Removing {} expired carts to release locks ", expiredCarts.size());
-            // Tutaj można dodać wywołanie do ProductService żeby zwolnić blokady, jeśli nie wygasają tam same
             cartRepository.deleteAll(expiredCarts);
         }
     }

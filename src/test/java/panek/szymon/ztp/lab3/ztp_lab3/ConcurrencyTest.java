@@ -11,7 +11,7 @@ import panek.szymon.ztp.lab3.ztp_lab3.application.port.ProductServicePort;
 import panek.szymon.ztp.lab3.ztp_lab3.application.service.CartService;
 import panek.szymon.ztp.lab3.ztp_lab3.domain.Cart;
 import panek.szymon.ztp.lab3.ztp_lab3.domain.CartRepository;
-import panek.szymon.ztp.lab3.ztp_lab3.infrastructure.scheduler.CartCleanupScheduler; // Import
+import panek.szymon.ztp.lab3.ztp_lab3.infrastructure.scheduler.CartCleanupScheduler;
 
 import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
@@ -37,7 +37,6 @@ class ConcurrencyTest {
     @MockitoBean
     private ProductServicePort productService;
 
-    // --- POPRAWKA 1: Wyłączamy scheduler na czas testu ---
     @MockitoBean
     private CartCleanupScheduler cartCleanupScheduler;
 
@@ -54,7 +53,7 @@ class ConcurrencyTest {
         String userId = "concurrent-user";
         int numberOfThreads = 5;
 
-        // Tworzymy koszyk PRZED testem
+
         cartRepository.save(new Cart(userId));
 
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
@@ -71,7 +70,6 @@ class ConcurrencyTest {
                     );
                     cartService.handle(command);
                 } catch (Exception e) {
-                    // W teście chcemy widzieć ewentualne wyjątki, które przebiły się przez @Retryable
                     e.printStackTrace();
                 } finally {
                     latch.countDown();
@@ -80,11 +78,43 @@ class ConcurrencyTest {
         }
 
         boolean tasksFinished = latch.await(10, TimeUnit.SECONDS);
-        assertTrue(tasksFinished, "Nie wszystkie wątki zakończyły pracę w wyznaczonym czasie!");
+        assertTrue(tasksFinished, "Nie wszystkie wątki zakończyły pracę w wyznaczonym czasie");
         executorService.shutdown();
 
         Cart cart = cartRepository.findByUserId(userId).orElseThrow();
 
         assertEquals(numberOfThreads, cart.getItems().size(), "Liczba produktów w koszyku powinna być równa liczbie wątków");
+    }
+
+    @Test
+    @DisplayName("Should NOT add item to cart if product reservation fails")
+    void shouldNotAddItemIfReservationFails() {
+
+        String userId = "user-reserved";
+        String productId = "limited-edition-item";
+
+
+        when(productService.reserveProduct(productId, 1)).thenReturn(false);
+
+        // WHEN & THEN
+
+        try {
+            cartService.handle(new AddProductCommand(userId, productId, 1));
+        } catch (RuntimeException e) {
+
+            System.out.println("Prawidłowo zablokowano dodanie produktu: " + e.getMessage());
+        }
+
+        // Weryfikacja: Koszyk w bazie NIE powinien zostać utworzony lub powinien być pusty
+        // (W zależności czy istniał wcześniej, tutaj zakładamy że nie istniał)
+        var cartOptional = cartRepository.findByUserId(userId);
+
+        if (cartOptional.isPresent()) {
+            // Jeśli koszyk istnieje, musi być pusty
+            assertEquals(0, cartOptional.get().getItems().size(), "Produkt nie powinien trafić do koszyka!");
+        } else {
+            // Jeśli koszyk nie powstał, to też dobrze
+            assertTrue(true);
+        }
     }
 }

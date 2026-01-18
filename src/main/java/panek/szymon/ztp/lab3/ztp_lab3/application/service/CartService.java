@@ -27,16 +27,12 @@ public class CartService {
     private final ApplicationEventPublisher eventPublisher;
 
 
-
     public Cart getCart(GetCartQuery query) {
         return cartRepository.findByUserId(query.userId())
                 .orElseGet(() -> cartRepository.save(new Cart(query.userId())));
     }
 
-    // --- COMMAND HANDLERS  ---
 
-    // Mechanizm Retry zapewnia spójność operacyjną przy konfliktach wersji
-    // Zwiększamy maxAttempts do 10 i dodajemy multiplier, żeby rozsunąć próby w czasie
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,
             maxAttempts = 10,
@@ -44,16 +40,13 @@ public class CartService {
     )
     @Transactional
     public void handle(AddProductCommand command) {
-        // 1. Blokada w serwisie zewnętrznym (analiza inżynierska +0.5) [cite: 33, 36]
         boolean reserved = productService.reserveProduct(command.productId(), command.quantity());
         if (!reserved) {
             throw new RuntimeException("Product temporarily unavailable or locked by another user.");
         }
 
-        // 2. Pobranie ceny (HTTP)
         BigDecimal price = productService.getProductPrice(command.productId());
 
-        // 3. Logika domeny
         Cart cart = cartRepository.findByUserId(command.userId())
                 .orElse(new Cart(command.userId()));
 
@@ -75,14 +68,10 @@ public class CartService {
         Cart cart = cartRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new RuntimeException("Cart empty"));
 
-        // Finalizacja: generowanie zlecenia [cite: 11]
-        // Rozdzielenie domen: Tu kończy się rola Koszyka, zaczyna Zamówienia
-        String orderId = "ORD-" + System.currentTimeMillis(); // Uproszczenie
+        String orderId = "ORD-" + System.currentTimeMillis();
 
-        // Publikacja zdarzenia (Powiadomienie +0.25)
         eventPublisher.publishEvent(new OrderPlacedEvent(orderId, command.userId()));
 
-        // Usunięcie koszyka po zamówieniu
         cartRepository.delete(cart);
 
         return orderId;

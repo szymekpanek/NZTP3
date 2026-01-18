@@ -9,7 +9,6 @@ public interface CartRepository {
     Optional<Cart> findByUserId(String userId);
     void delete(Cart cart);
 
-    // ZMIANA TUTAJ: Używamy sygnatury zgodnej z CrudRepository
     void deleteAll(Iterable<? extends Cart> entities);
     void deleteAll();
 

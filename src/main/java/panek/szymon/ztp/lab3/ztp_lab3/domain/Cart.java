@@ -21,14 +21,12 @@ public class Cart {
     @Id
     private String id;
 
-    // Unikalny identyfikator użytkownika [cite: 29]
     private String userId;
 
     private List<CartItem> items = new ArrayList<>();
 
     private LocalDateTime lastModified;
 
-    // Wersja do obsługi współbieżności
     @Version
     private Long version;
 

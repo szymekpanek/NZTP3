@@ -12,7 +12,6 @@ public class NotificationService {
 
     @EventListener
     public void handleOrderPlaced(OrderPlacedEvent event) {
-        // Symulacja wysyłki maila/powiadomienia
         log.info("NOTIFICATION: Order {} for user {} started processing. ",
                 event.orderId(), event.userId());
     }

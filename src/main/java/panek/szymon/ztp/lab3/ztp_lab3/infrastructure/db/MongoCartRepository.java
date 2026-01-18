@@ -11,6 +11,5 @@ import java.util.List;
 
 @Repository
 public interface MongoCartRepository extends MongoRepository<Cart, String>, CartRepository {
-    // Implementacja jest generowana przez Spring Data
     List<Cart> findAllByLastModifiedBefore(LocalDateTime dateTime);
 }

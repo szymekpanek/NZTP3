@@ -18,13 +18,13 @@ public class CartController {
 
     private final CartService cartService;
 
-    // Utworzenie / Podgląd koszyka [cite: 7, 10]
+    // Utworzenie
     @GetMapping("/{userId}")
     public ResponseEntity<Cart> getCart(@PathVariable String userId) {
         return ResponseEntity.ok(cartService.getCart(new GetCartQuery(userId)));
     }
 
-    // Dodanie produktu [cite: 8]
+    // Dodanie produktu
     @PostMapping("/{userId}/items")
     public ResponseEntity<Void> addProduct(@PathVariable String userId, @RequestBody AddProductCommand cmd) {
         // Nadpisujemy userId z path variable dla bezpieczeństwa
@@ -32,14 +32,14 @@ public class CartController {
         return ResponseEntity.ok().build();
     }
 
-    // Usunięcie produktu [cite: 9]
+    // Usunięcie produktu
     @DeleteMapping("/{userId}/items/{productId}")
     public ResponseEntity<Void> removeProduct(@PathVariable String userId, @PathVariable String productId) {
         cartService.handle(new RemoveProductCommand(userId, productId));
         return ResponseEntity.ok().build();
     }
 
-    // Zatwierdzenie koszyka [cite: 11]
+    // Zatwierdzenie koszyka
     @PostMapping("/{userId}/confirm")
     public ResponseEntity<String> confirmCart(@PathVariable String userId) {
         String orderId = cartService.handle(new ConfirmCartCommand(userId));

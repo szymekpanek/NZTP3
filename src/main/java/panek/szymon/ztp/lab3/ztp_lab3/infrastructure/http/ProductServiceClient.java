@@ -11,22 +11,19 @@ import java.math.BigDecimal;
 public class ProductServiceClient implements ProductServicePort {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String PRODUCT_SERVICE_URL = "http://localhost:8081/products"; // Mock URL
+    private final String PRODUCT_SERVICE_URL = "http://localhost:8081/products";
 
     @Override
     public boolean reserveProduct(String productId, int quantity) {
-        // Symulacja żądania HTTP POST do zablokowania produktu [cite: 30, 33]
-        try {
-            // W rzeczywistości: restTemplate.postForEntity(PRODUCT_SERVICE_URL + "/reserve", ...);
-            return true; // Mock success
-        } catch (Exception e) {
-            return false;
-        }
+        return !"unavailable-item".equals(productId);
+
     }
 
     @Override
     public BigDecimal getProductPrice(String productId) {
-        // Symulacja pobrania ceny
         return new BigDecimal("99.99");
     }
+
+
+
 }
